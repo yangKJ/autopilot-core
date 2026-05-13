@@ -42,23 +42,24 @@ class TaskScheduler:
 
     def _register_default_tasks(self):
         """注册默认任务"""
+        python = sys.executable
         self.tasks["daily_health_check"] = ScheduledTask(
             name="每日健康检查",
-            command=["python3", "-m", "autopilot_core.cli", "health"],
+            command=[python, "-m", "autopilot_core.cli", "health"],
             schedule="0 9 * * *",
             enabled=True
         )
 
         self.tasks["weekly_report"] = ScheduledTask(
             name="每周报告",
-            command=["python3", "-m", "autopilot_core.cli", "dashboard"],
+            command=[python, "-m", "autopilot_core.cli", "dashboard"],
             schedule="0 10 * * 1",
             enabled=True
         )
 
         self.tasks["trend_analysis"] = ScheduledTask(
             name="趋势分析",
-            command=["python3", "-m", "autopilot_core.cli", "predict", "--report"],
+            command=[python, "-m", "autopilot_core.cli", "predict", "--report"],
             schedule="0 8 * * *",
             enabled=True
         )
