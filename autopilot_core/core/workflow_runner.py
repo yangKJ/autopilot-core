@@ -176,13 +176,18 @@ class WorkflowRunner:
                 workflow_exit_code = step_result.exit_code
                 overall_success = False  # 有失败步骤，整体失败
 
-                if not step_config.continue_on_error:
+                # 优先使用步骤级别的 continue_on_error，否则使用工作流级别的
+                step_continue = step_config.continue_on_error
+                workflow_continue = workflow.continue_on_error
+
+                if not step_continue and not workflow_continue:
                     if not json_output:
                         print(f"\n⚠️  步骤失败且 continue_on_error=False，中止工作流")
                     break
                 else:
                     if not json_output:
-                        print(f"\n⚠️  步骤失败但 continue_on_error=True，继续执行")
+                        reason = "步骤" if step_continue else "工作流"
+                        print(f"\n⚠️  步骤失败但 {reason} continue_on_error=True，继续执行")
                     # 即使继续，也将失败的步骤加入completed_steps
                     completed_steps.append(step_config.name)
             else:
@@ -377,6 +382,10 @@ class WorkflowRunner:
         if description is not None and not isinstance(description, str):
             errors.append("workflow 'description' must be a string")
 
+        continue_on_error = workflow_data.get("continue_on_error")
+        if continue_on_error is not None and not isinstance(continue_on_error, bool):
+            errors.append("workflow 'continue_on_error' must be a boolean")
+
         return {"valid": len(errors) == 0, "errors": errors}
 
     def validate_config(self, config_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -451,6 +460,7 @@ def workflow_show(workflow_name: str, project_root: Optional[Path] = None, json_
     print(f"📦 工作流: {workflow.name}")
     print(f"{'='*60}")
     print(f"📝 描述: {workflow.description}")
+    print(f"   失败继续: {'是' if workflow.continue_on_error else '否'} (工作流级别)")
     print(f"\n📊 步骤 ({len(workflow.steps)}):")
 
     for i, step in enumerate(workflow.steps, 1):

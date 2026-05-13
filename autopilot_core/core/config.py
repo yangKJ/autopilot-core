@@ -51,12 +51,14 @@ class WorkflowDefinition:
     name: str
     description: str
     steps: List[WorkflowStepConfig] = field(default_factory=list)
+    continue_on_error: bool = False  # 工作流级别失败继续设置
 
     def to_dict(self) -> Dict:
         return {
             "name": self.name,
             "description": self.description,
             "steps": [s.to_dict() if isinstance(s, WorkflowStepConfig) else s for s in self.steps],
+            "continue_on_error": self.continue_on_error,
         }
 
     @classmethod
@@ -66,6 +68,7 @@ class WorkflowDefinition:
             name=data.get("name", ""),
             description=data.get("description", ""),
             steps=steps,
+            continue_on_error=data.get("continue_on_error", False),
         )
 
 
