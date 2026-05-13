@@ -89,6 +89,40 @@ def sample_workflow_config():
                         "timeout": 60
                     }
                 ]
+            },
+            {
+                "name": "workflow-level-continue",
+                "description": "Workflow with workflow-level continue_on_error",
+                "continue_on_error": True,
+                "steps": [
+                    {
+                        "name": "step1-fail",
+                        "command": "python3 -c 'import sys; sys.exit(1)'",
+                        "timeout": 60
+                    },
+                    {
+                        "name": "step2-run",
+                        "command": "echo 'still running'",
+                        "timeout": 60
+                    }
+                ]
+            },
+            {
+                "name": "workflow-level-stop",
+                "description": "Workflow with workflow-level continue_on_error=False",
+                "continue_on_error": False,
+                "steps": [
+                    {
+                        "name": "step1-fail",
+                        "command": "python3 -c 'import sys; sys.exit(1)'",
+                        "timeout": 60
+                    },
+                    {
+                        "name": "step2-never",
+                        "command": "echo 'never runs'",
+                        "timeout": 60
+                    }
+                ]
             }
         ]
     }

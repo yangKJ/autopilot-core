@@ -190,7 +190,7 @@ class TestWorkflowExecution:
         assert len(result.completed_steps) == 0
 
     def test_workflow_run_continue_on_error(self, temp_project, sample_workflow_config):
-        """测试 workflow continue-on-error"""
+        """测试 workflow continue-on-error (step-level)"""
         import yaml
         config_path = temp_project / ".autopilot.yaml"
         with open(config_path, "w") as f:
@@ -203,6 +203,74 @@ class TestWorkflowExecution:
         assert result.success is False
         assert result.failed_step == "fail-step"
         # 但所有步骤都执行了
+        assert len(result.completed_steps) == 2
+
+    def test_workflow_level_continue_on_error(self, temp_project, sample_workflow_config):
+        """测试 workflow-level continue_on_error=True"""
+        import yaml
+        config_path = temp_project / ".autopilot.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(sample_workflow_config, f)
+
+        runner = WorkflowRunner()
+        result = runner.run_workflow("workflow-level-continue", temp_project)
+
+        # 工作流级别 continue_on_error=True，即使步骤失败也应继续
+        assert result.success is False  # 有失败步骤
+        assert result.failed_step == "step1-fail"
+        # 所有步骤都执行了
+        assert len(result.completed_steps) == 2
+        assert "step2-run" in result.completed_steps
+
+    def test_workflow_level_stop_on_error(self, temp_project, sample_workflow_config):
+        """测试 workflow-level continue_on_error=False"""
+        import yaml
+        config_path = temp_project / ".autopilot.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(sample_workflow_config, f)
+
+        runner = WorkflowRunner()
+        result = runner.run_workflow("workflow-level-stop", temp_project)
+
+        # 工作流级别 continue_on_error=False，失败时中止
+        assert result.success is False
+        assert result.exit_code != 0
+        assert result.failed_step == "step1-fail"
+        # 失败的步骤不会加入 completed_steps（因为工作流停止了）
+        assert len(result.completed_steps) == 0
+        assert "step2-never" not in result.completed_steps
+
+    def test_workflow_level_continue_overrides_step(self, temp_project):
+        """测试步骤级别的 continue_on_error 被工作流级别覆盖"""
+        import yaml
+        config_path = temp_project / ".autopilot.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump({
+                "workflows": [
+                    {
+                        "name": "override-test",
+                        "description": "Test override",
+                        "continue_on_error": True,  # 工作流级别=True
+                        "steps": [
+                            {
+                                "name": "fail-step",
+                                "command": "python3 -c 'import sys; sys.exit(1)'",
+                                "continue_on_error": False  # 步骤级别=False，但应该被覆盖
+                            },
+                            {
+                                "name": "after-step",
+                                "command": "echo 'after'"
+                            }
+                        ]
+                    }
+                ]
+            }, f)
+
+        runner = WorkflowRunner()
+        result = runner.run_workflow("override-test", temp_project)
+
+        # 工作流级别 True 优先，应该继续执行
+        assert result.success is False
         assert len(result.completed_steps) == 2
 
     def test_workflow_result_serialization(self, temp_project, sample_workflow_config):
