@@ -123,11 +123,13 @@ class TestWorkflowRunner:
         runner = WorkflowRunner()
         workflows = runner.list_workflows(temp_project)
 
-        assert len(workflows) == 3
+        assert len(workflows) == 5
         names = [wf.name for wf in workflows]
         assert "test-workflow" in names
         assert "fail-workflow" in names
         assert "continue-workflow" in names
+        assert "workflow-level-continue" in names
+        assert "workflow-level-stop" in names
 
     def test_show_workflow(self, temp_project, sample_workflow_config):
         """测试显示工作流详情"""
