@@ -282,6 +282,7 @@ def cmd_daemon(args) -> int:
 def cmd_scheduler(args) -> int:
     """定时任务调度"""
     from .core.scheduler import TaskScheduler
+    import time
 
     project_root = get_project_root()
     scheduler = TaskScheduler(project_root=project_root)
@@ -292,6 +293,18 @@ def cmd_scheduler(args) -> int:
         scheduler.run_pending()
     elif args.report:
         print(scheduler.generate_report(args.days or 7))
+    elif args.watch:
+        print(f"\n🔄{'='*58}")
+        print(f"   定时任务监控模式")
+        print(f"   检查间隔: {args.interval}秒")
+        print(f"   按 Ctrl+C 停止")
+        print(f"{'='*60}\n")
+        try:
+            while True:
+                scheduler.run_pending()
+                time.sleep(args.interval)
+        except KeyboardInterrupt:
+            print("\n👋 监控已停止")
     else:
         scheduler.list_tasks()
 
@@ -498,6 +511,8 @@ def main():
     scheduler_parser.add_argument("--run", "-r", action="store_true", help="运行待执行任务")
     scheduler_parser.add_argument("--report", action="store_true", help="生成报告")
     scheduler_parser.add_argument("--days", "-d", type=int, help="报告天数")
+    scheduler_parser.add_argument("--watch", "-w", action="store_true", help="持续监控模式")
+    scheduler_parser.add_argument("--interval", type=int, default=3600, help="检查间隔（秒），默认3600")
 
     # git-hooks - Git Hooks
     hooks_parser = subparsers.add_parser("git-hooks", help="Git Hooks管理")
